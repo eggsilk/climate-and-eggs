@@ -20,32 +20,36 @@ import Layout from '../layouts/Layout.astro';
   </div>
 
   <!-- Meta bar -->
-  <div id="meta-bar" class="mono text-xs mb-10 flex gap-6" style="color: #555;">
+  <div id="meta-bar" class="mono text-xs mb-8 flex gap-6" style="color: #555;">
     <span id="meta-updated">–</span>
-    <span id="meta-journals">–</span>
-    <span id="meta-papers">–</span>
+    <span id="meta-keywords">–</span>
+    <span id="meta-range">–</span>
+  </div>
+
+  <!-- Domain filter -->
+  <div id="domain-filter" class="flex flex-wrap gap-2 mb-8" style="display:none !important;">
+    <button class="domain-btn active-domain mono text-xs px-3 py-1 rounded" data-domain="all">All domains</button>
   </div>
 
   <!-- Tab controls -->
   <div class="flex gap-2 mb-8" id="tab-controls">
-    <button data-tab="board"   class="tab-btn active-tab mono text-xs px-4 py-2 rounded" >Signal Board</button>
-    <button data-tab="trends"  class="tab-btn mono text-xs px-4 py-2 rounded">Trends</button>
-    <button data-tab="map"     class="tab-btn mono text-xs px-4 py-2 rounded">Concept Map</button>
-    <button data-tab="watch"   class="tab-btn mono text-xs px-4 py-2 rounded">Watchlist</button>
+    <button data-tab="board"  class="tab-btn active-tab mono text-xs px-4 py-2 rounded">Signal Board</button>
+    <button data-tab="trends" class="tab-btn mono text-xs px-4 py-2 rounded">Trends</button>
+    <button data-tab="map"    class="tab-btn mono text-xs px-4 py-2 rounded">Concept Map</button>
+    <button data-tab="watch"  class="tab-btn mono text-xs px-4 py-2 rounded">Watchlist</button>
   </div>
 
   <!-- ── Signal Board ── -->
   <div id="tab-board" class="tab-panel">
     <p class="text-xs mb-4" style="color: #555;">
-      Each bubble is a keyword. Size = frequency. Position: recency (x) vs composite score (y).
+      Each bubble is a keyword. Size = research volume. Position: recency (x) vs composite score (y).
       Colour = trend shape. Click a bubble to drill in.
     </p>
     <div id="board-chart" style="width:100%;height:520px;position:relative;">
       <svg id="board-svg" width="100%" height="100%"></svg>
-      <!-- Tooltip -->
       <div id="board-tooltip"
            style="position:absolute;display:none;background:#161616;border:1px solid #2a2a2a;
-                  border-radius:6px;padding:10px 14px;font-size:12px;pointer-events:none;max-width:220px;">
+                  border-radius:6px;padding:10px 14px;font-size:12px;pointer-events:none;max-width:240px;">
       </div>
     </div>
     <!-- Drill-down panel -->
@@ -61,8 +65,7 @@ import Layout from '../layouts/Layout.astro';
       <div id="drill-chart" style="width:100%;height:180px;">
         <svg id="drill-svg" width="100%" height="100%"></svg>
       </div>
-      <div id="drill-scores" class="grid grid-cols-4 gap-3 mt-4">
-      </div>
+      <div id="drill-scores" class="grid grid-cols-4 gap-3 mt-4"></div>
     </div>
   </div>
 
@@ -86,18 +89,17 @@ import Layout from '../layouts/Layout.astro';
       <table id="trends-table" style="width:100%;border-collapse:collapse;font-size:12px;">
         <thead>
           <tr style="border-bottom:1px solid #2a2a2a;">
-            <th class="mono text-left py-3 pr-6" style="color:#555;font-weight:500;">KEYWORD</th>
-            <th class="mono text-right py-3 px-3" style="color:#555;font-weight:500;">SCORE</th>
-            <th class="mono text-right py-3 px-3" style="color:#555;font-weight:500;">M</th>
-            <th class="mono text-right py-3 px-3" style="color:#555;font-weight:500;">Ac</th>
-            <th class="mono text-right py-3 px-3" style="color:#555;font-weight:500;">R</th>
-            <th class="mono text-right py-3 px-3" style="color:#555;font-weight:500;">Cv</th>
-            <th class="mono text-left py-3 px-3" style="color:#555;font-weight:500;">SHAPE</th>
-            <th class="mono text-left py-3 px-3" style="color:#555;font-weight:500;">TREND</th>
+            <th class="mono text-left py-3 pr-6"   style="color:#555;font-weight:500;">KEYWORD</th>
+            <th class="mono text-right py-3 px-3"  style="color:#555;font-weight:500;">SCORE</th>
+            <th class="mono text-right py-3 px-3"  style="color:#555;font-weight:500;">M</th>
+            <th class="mono text-right py-3 px-3"  style="color:#555;font-weight:500;">Ac</th>
+            <th class="mono text-right py-3 px-3"  style="color:#555;font-weight:500;">R</th>
+            <th class="mono text-right py-3 px-3"  style="color:#555;font-weight:500;">Cv</th>
+            <th class="mono text-left py-3 px-3"   style="color:#555;font-weight:500;">SHAPE</th>
+            <th class="mono text-left py-3 px-3"   style="color:#555;font-weight:500;">JOURNALS</th>
           </tr>
         </thead>
-        <tbody id="trends-body">
-        </tbody>
+        <tbody id="trends-body"></tbody>
       </table>
     </div>
   </div>
@@ -133,10 +135,11 @@ import Layout from '../layouts/Layout.astro';
 <script>
 import * as d3 from 'd3';
 
-// ── Shared state ──────────────────────────────────────────────────────────────
-let signalData: any = null;
+// ── State ─────────────────────────────────────────────────────────────────────
+let fullData: any   = null;   // raw signal_data.json
 let expansionData: any = null;
 let watchlistData: any = null;
+let currentDomain   = 'all'; // selected domain key
 
 const SHAPE_COLOR: Record<string, string> = {
   emerging:  '#7fff6e',
@@ -147,32 +150,86 @@ const SHAPE_COLOR: Record<string, string> = {
   no_data:   '#444444',
 };
 
+// ── Helpers ───────────────────────────────────────────────────────────────────
+function activeKeywords(): any[] {
+  if (!fullData || !fullData.domains) return [];
+  if (currentDomain === 'all') {
+    return Object.values(fullData.domains).flatMap((d: any) => d.keywords);
+  }
+  return fullData.domains[currentDomain]?.keywords ?? [];
+}
+
 // ── Load data ─────────────────────────────────────────────────────────────────
 async function loadAll() {
+  const base = import.meta.env.BASE_URL.replace(/\/$/, '');
   try {
-    const [sRes, eRes, wRes, mRes] = await Promise.all([
-      fetch('/data/signals.json'),
-      fetch('/data/expansion.json'),
-      fetch('/data/watchlist.json'),
-      fetch('/data/meta.json'),
+    const [sdRes, eRes, wRes] = await Promise.all([
+      fetch(`${base}/data/signal_data.json`),
+      fetch(`${base}/data/expansion.json`),
+      fetch(`${base}/data/watchlist.json`),
     ]);
-    signalData    = (await sRes.json()).signals;
-    expansionData = (await eRes.json()).expansion;
-    watchlistData = (await wRes.json()).watchlist;
-    const meta    = await mRes.json();
-
-    // Meta bar
-    document.getElementById('meta-updated')!.textContent  = `updated ${meta.updated}`;
-    document.getElementById('meta-journals')!.textContent = `${meta.journals.join(', ')}`;
-    document.getElementById('meta-papers')!.textContent   = `${meta.total_papers.toLocaleString()} papers`;
+    fullData      = await sdRes.json();
+    expansionData = (await eRes.json()).expansion ?? null;
+    watchlistData = (await wRes.json()).watchlist ?? null;
   } catch {
-    // data not available yet
-    document.getElementById('meta-updated')!.textContent = 'data not yet loaded — run the tracker';
+    // data not yet available
   }
+
+  updateMetaBar();
+  buildDomainFilter();
   drawBoard();
   drawTrends();
   drawMap();
   drawWatchlist();
+}
+
+function updateMetaBar() {
+  const updated = document.getElementById('meta-updated')!;
+  const keywords = document.getElementById('meta-keywords')!;
+  const range    = document.getElementById('meta-range')!;
+
+  if (!fullData?.generated_at) {
+    updated.textContent = 'data not yet loaded — run the tracker';
+    return;
+  }
+
+  const date = new Date(fullData.generated_at);
+  updated.textContent  = `updated ${date.toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' })}`;
+
+  const totalKw = Object.values(fullData.domains ?? {}).reduce(
+    (sum: number, d: any) => sum + (d.keyword_count ?? 0), 0
+  );
+  const domainCount = Object.keys(fullData.domains ?? {}).length;
+  keywords.textContent = `${totalKw} keywords · ${domainCount} domains`;
+  range.textContent    = `${fullData.year_from}–${fullData.year_to}`;
+}
+
+function buildDomainFilter() {
+  const container = document.getElementById('domain-filter')!;
+  if (!fullData?.domains || Object.keys(fullData.domains).length === 0) return;
+
+  container.style.removeProperty('display');  // un-hide
+
+  // Clear existing domain buttons (keep "All")
+  container.querySelectorAll('[data-domain]:not([data-domain="all"])').forEach(el => el.remove());
+
+  Object.entries(fullData.domains).forEach(([key, info]: [string, any]) => {
+    const btn = document.createElement('button');
+    btn.className   = 'domain-btn mono text-xs px-3 py-1 rounded';
+    btn.dataset.domain = key;
+    btn.textContent = info.label;
+    container.appendChild(btn);
+  });
+
+  container.querySelectorAll('.domain-btn').forEach(btn => {
+    btn.addEventListener('click', () => {
+      currentDomain = (btn as HTMLElement).dataset.domain!;
+      container.querySelectorAll('.domain-btn').forEach(b => b.classList.remove('active-domain'));
+      btn.classList.add('active-domain');
+      drawBoard();
+      renderTrendsTable();
+    });
+  });
 }
 
 // ── Tab switching ─────────────────────────────────────────────────────────────
@@ -192,13 +249,14 @@ function drawBoard() {
   const rect = container.getBoundingClientRect();
   const W = rect.width || 800;
   const H = 520;
-  const pad = { top: 30, right: 30, bottom: 50, left: 50 };
+  const pad = { top: 30, right: 30, bottom: 50, left: 55 };
 
-  const svg = d3.select('#board-svg')
-    .attr('viewBox', `0 0 ${W} ${H}`);
+  const svg = d3.select('#board-svg').attr('viewBox', `0 0 ${W} ${H}`);
   svg.selectAll('*').remove();
 
-  if (!signalData || signalData.length === 0) {
+  const data = activeKeywords();
+
+  if (data.length === 0) {
     svg.append('text').attr('x', W/2).attr('y', H/2)
       .attr('text-anchor', 'middle').attr('fill', '#444').attr('font-size', 13)
       .text('Run the tracker to populate this chart');
@@ -210,16 +268,37 @@ function drawBoard() {
   const yScale = d3.scaleLinear()
     .domain([0, 1]).range([H - pad.bottom, pad.top]);
   const rScale = d3.scaleSqrt()
-    .domain([0, d3.max(signalData, (d: any) => d.total_occurrences) as number])
-    .range([4, 28]);
+    .domain([0, d3.max(data, (d: any) => d.total_occurrences) as number])
+    .range([4, 26]);
+
+  // Grid lines
+  const gridColor = '#1a1a1a';
+  [0.25, 0.5, 0.75].forEach(v => {
+    svg.append('line')
+      .attr('x1', xScale(v)).attr('x2', xScale(v))
+      .attr('y1', pad.top).attr('y2', H - pad.bottom)
+      .attr('stroke', gridColor).attr('stroke-width', 1);
+    svg.append('line')
+      .attr('x1', pad.left).attr('x2', W - pad.right)
+      .attr('y1', yScale(v)).attr('y2', yScale(v))
+      .attr('stroke', gridColor).attr('stroke-width', 1);
+  });
 
   // Axes
   svg.append('g').attr('transform', `translate(0,${H - pad.bottom})`)
     .call(d3.axisBottom(xScale).ticks(5).tickFormat(d3.format('.1f')))
-    .call(g => { g.select('.domain').attr('stroke', '#2a2a2a'); g.selectAll('text').attr('fill', '#555').attr('font-size', 10); g.selectAll('line').attr('stroke', '#2a2a2a'); });
+    .call(g => {
+      g.select('.domain').attr('stroke', '#2a2a2a');
+      g.selectAll('text').attr('fill', '#555').attr('font-size', 10);
+      g.selectAll('line').attr('stroke', '#2a2a2a');
+    });
   svg.append('g').attr('transform', `translate(${pad.left},0)`)
     .call(d3.axisLeft(yScale).ticks(5).tickFormat(d3.format('.1f')))
-    .call(g => { g.select('.domain').attr('stroke', '#2a2a2a'); g.selectAll('text').attr('fill', '#555').attr('font-size', 10); g.selectAll('line').attr('stroke', '#2a2a2a'); });
+    .call(g => {
+      g.select('.domain').attr('stroke', '#2a2a2a');
+      g.selectAll('text').attr('fill', '#555').attr('font-size', 10);
+      g.selectAll('line').attr('stroke', '#2a2a2a');
+    });
 
   // Axis labels
   svg.append('text').attr('x', W/2).attr('y', H - 5)
@@ -230,18 +309,22 @@ function drawBoard() {
     .attr('text-anchor', 'middle').attr('fill', '#555').attr('font-size', 10)
     .text('Composite Score →');
 
+  // "Emerging signal" quadrant label
+  svg.append('text').attr('x', pad.left + 6).attr('y', pad.top + 14)
+    .attr('fill', '#2a2a2a').attr('font-size', 9).attr('class', 'mono')
+    .text('HIGH SIGNAL');
+
   const tooltip = document.getElementById('board-tooltip')!;
 
-  // Bubbles
   svg.selectAll('circle')
-    .data(signalData)
+    .data(data)
     .join('circle')
     .attr('cx', (d: any) => xScale(d.recency_score))
     .attr('cy', (d: any) => yScale(d.composite_score))
     .attr('r',  (d: any) => rScale(d.total_occurrences))
-    .attr('fill', (d: any) => SHAPE_COLOR[d.trend_shape] || '#444')
-    .attr('fill-opacity', 0.7)
-    .attr('stroke', (d: any) => SHAPE_COLOR[d.trend_shape] || '#444')
+    .attr('fill',         (d: any) => SHAPE_COLOR[d.trend_shape] || '#444')
+    .attr('fill-opacity', 0.65)
+    .attr('stroke',       (d: any) => SHAPE_COLOR[d.trend_shape] || '#444')
     .attr('stroke-width', 1)
     .style('cursor', 'pointer')
     .on('mousemove', (event: MouseEvent, d: any) => {
@@ -249,11 +332,12 @@ function drawBoard() {
       tooltip.style.display = 'block';
       tooltip.style.left = `${event.clientX - box.left + 12}px`;
       tooltip.style.top  = `${event.clientY - box.top  - 10}px`;
+      const journalStr = d.journals?.join(', ') || '';
       tooltip.innerHTML = `
         <p style="color:#e8e8e8;font-weight:600;margin-bottom:4px;">${d.keyword}</p>
         <p style="color:#888;font-size:11px;">score: ${d.composite_score.toFixed(2)} · ${d.trend_shape}</p>
-        <p style="color:#888;font-size:11px;">freq: ${d.total_occurrences} papers</p>
-        <p style="color:#555;font-size:10px;margin-top:4px;">${d.sparkline || ''}</p>
+        <p style="color:#888;font-size:11px;">${d.total_occurrences} papers · driver: ${d.primary_driver}</p>
+        ${journalStr ? `<p style="color:#555;font-size:10px;margin-top:4px;">${journalStr}</p>` : ''}
       `;
     })
     .on('mouseleave', () => { tooltip.style.display = 'none'; })
@@ -266,14 +350,13 @@ function openDrill(d: any) {
   panel.style.display = 'block';
   document.getElementById('drill-keyword')!.textContent = d.keyword;
   document.getElementById('drill-meta')!.textContent =
-    `${d.trend_shape} · score ${d.composite_score.toFixed(2)} · ${d.total_occurrences} papers · peak ${d.peak_year}`;
+    `${d.trend_shape} · score ${d.composite_score.toFixed(2)} · ${d.total_occurrences} papers · driver: ${d.primary_driver}`;
 
-  // Scores grid
   const scores = [
-    { label: 'Momentum',     val: d.momentum_score },
-    { label: 'Acceleration', val: d.acceleration_score },
-    { label: 'Recency',      val: d.recency_score },
-    { label: 'Cit. Velocity',val: d.citation_velocity_score },
+    { label: 'Momentum',      val: d.momentum_score },
+    { label: 'Acceleration',  val: d.acceleration_score },
+    { label: 'Recency',       val: d.recency_score },
+    { label: 'Cit. Velocity', val: d.citation_velocity_score },
   ];
   document.getElementById('drill-scores')!.innerHTML = scores.map(s => `
     <div style="background:#0f0f0f;border:1px solid #2a2a2a;border-radius:6px;padding:10px;">
@@ -285,8 +368,7 @@ function openDrill(d: any) {
     </div>
   `).join('');
 
-  // Trend bar chart
-  const freq = d.frequency_by_year;
+  const freq  = d.frequency_by_year ?? {};
   const years = Object.keys(freq).sort();
   const vals  = years.map(y => freq[y]);
   const maxV  = Math.max(...vals, 1);
@@ -300,18 +382,13 @@ function openDrill(d: any) {
   const xBand = d3.scaleBand().domain(years).range([pad.left, W - pad.right]).padding(0.25);
   const yLin  = d3.scaleLinear().domain([0, maxV]).range([H - pad.bottom, pad.top]);
 
-  drillSvg
-    .attr('viewBox', `0 0 ${W} ${H}`)
-    .selectAll('rect')
-    .data(years)
-    .join('rect')
-    .attr('x', (y: string) => xBand(y)!)
-    .attr('y', (y: string) => yLin(freq[y]))
-    .attr('width', xBand.bandwidth())
+  drillSvg.attr('viewBox', `0 0 ${W} ${H}`)
+    .selectAll('rect').data(years).join('rect')
+    .attr('x',      (y: string) => xBand(y)!)
+    .attr('y',      (y: string) => yLin(freq[y]))
+    .attr('width',  xBand.bandwidth())
     .attr('height', (y: string) => H - pad.bottom - yLin(freq[y]))
-    .attr('fill', '#7fff6e')
-    .attr('fill-opacity', 0.8)
-    .attr('rx', 2);
+    .attr('fill', '#7fff6e').attr('fill-opacity', 0.8).attr('rx', 2);
 
   drillSvg.append('g').attr('transform', `translate(0,${H - pad.bottom})`)
     .call(d3.axisBottom(xBand))
@@ -327,7 +404,6 @@ function openDrill(d: any) {
 // ── Trends table ──────────────────────────────────────────────────────────────
 function drawTrends() {
   renderTrendsTable();
-
   document.getElementById('trends-search')?.addEventListener('input', renderTrendsTable);
   document.getElementById('trends-shape')?.addEventListener('change', renderTrendsTable);
 }
@@ -337,17 +413,23 @@ function renderTrendsTable() {
   const shape  = (document.getElementById('trends-shape')  as HTMLSelectElement)?.value || '';
   const body   = document.getElementById('trends-body')!;
 
-  if (!signalData) { body.innerHTML = '<tr><td colspan="8" style="color:#555;padding:20px 0;font-size:12px;">No data yet.</td></tr>'; return; }
+  const data = activeKeywords();
+  if (data.length === 0) {
+    body.innerHTML = '<tr><td colspan="8" style="color:#555;padding:20px 0;font-size:12px;">No data yet.</td></tr>';
+    return;
+  }
 
-  const filtered = signalData.filter((d: any) =>
-    (!search || d.keyword.includes(search)) &&
+  const filtered = data.filter((d: any) =>
+    (!search || d.keyword.toLowerCase().includes(search)) &&
     (!shape  || d.trend_shape === shape)
   );
 
   body.innerHTML = filtered.map((d: any) => {
     const c = SHAPE_COLOR[d.trend_shape] || '#888';
+    const journalStr = (d.journals ?? []).join(', ');
     return `
-      <tr style="border-bottom:1px solid #1e1e1e;cursor:pointer;" onclick="window._drillItem && window._drillItem('${d.keyword}')">
+      <tr style="border-bottom:1px solid #1e1e1e;cursor:pointer;"
+          onclick="window._drillItem && window._drillItem('${d.keyword.replace(/'/g, "\\'")}')">
         <td class="py-3 pr-6" style="color:#e8e8e8;font-size:12px;">${d.keyword}</td>
         <td class="mono text-right py-3 px-3" style="color:#7fff6e;">${d.composite_score.toFixed(2)}</td>
         <td class="mono text-right py-3 px-3" style="color:#555;">${d.momentum_score.toFixed(2)}</td>
@@ -355,15 +437,15 @@ function renderTrendsTable() {
         <td class="mono text-right py-3 px-3" style="color:#555;">${d.recency_score.toFixed(2)}</td>
         <td class="mono text-right py-3 px-3" style="color:#555;">${d.citation_velocity_score.toFixed(2)}</td>
         <td class="mono py-3 px-3 text-xs" style="color:${c};">${d.trend_shape}</td>
-        <td class="mono py-3 px-3 text-xs" style="color:#444;">${d.sparkline || ''}</td>
+        <td class="mono py-3 px-3 text-xs" style="color:#444;max-width:180px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;" title="${journalStr}">${journalStr}</td>
       </tr>
     `;
   }).join('');
 }
 
-// Bridge for table row click → drill panel
 (window as any)._drillItem = (keyword: string) => {
-  const d = signalData?.find((s: any) => s.keyword === keyword);
+  const data = activeKeywords();
+  const d = data.find((s: any) => s.keyword === keyword);
   if (d) {
     document.querySelectorAll('.tab-panel').forEach(p => ((p as HTMLElement).style.display = 'none'));
     document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active-tab'));
@@ -377,7 +459,6 @@ function renderTrendsTable() {
 function drawMap() {
   const W = document.getElementById('map-chart')?.getBoundingClientRect().width || 800;
   const H = 560;
-
   const svg = d3.select('#map-svg').attr('viewBox', `0 0 ${W} ${H}`);
   svg.selectAll('*').remove();
 
@@ -388,13 +469,13 @@ function drawMap() {
     return;
   }
 
-  // Build nodes + links from expansion data
+  const allKw = activeKeywords();
   const nodeMap = new Map<string, { id: string; score: number }>();
   const links: { source: string; target: string; value: number }[] = [];
 
   expansionData.forEach((entry: any) => {
     if (!nodeMap.has(entry.seed)) {
-      const s = signalData?.find((d: any) => d.keyword === entry.seed);
+      const s = allKw.find((d: any) => d.keyword === entry.seed);
       nodeMap.set(entry.seed, { id: entry.seed, score: s?.composite_score ?? 0.5 });
     }
     entry.neighbors.slice(0, 6).forEach((nb: any) => {
@@ -404,7 +485,6 @@ function drawMap() {
   });
 
   const nodes = Array.from(nodeMap.values());
-
   const rScale = d3.scaleLinear().domain([0, 1]).range([5, 16]);
   const tooltip = document.getElementById('map-tooltip')!;
   const mapDiv  = document.getElementById('map-chart')!;
@@ -415,12 +495,10 @@ function drawMap() {
     .force('center', d3.forceCenter(W / 2, H / 2))
     .force('collision', d3.forceCollide().radius((d: any) => rScale(d.score) + 8));
 
-  const link = svg.append('g')
-    .selectAll('line').data(links).join('line')
+  const link = svg.append('g').selectAll('line').data(links).join('line')
     .attr('stroke', '#2a2a2a').attr('stroke-width', 1);
 
-  const node = svg.append('g')
-    .selectAll('g').data(nodes).join('g')
+  const node = svg.append('g').selectAll('g').data(nodes).join('g')
     .style('cursor', 'pointer')
     .call(d3.drag<SVGGElement, any>()
       .on('start', (event, d) => { if (!event.active) sim.alphaTarget(0.3).restart(); d.fx = d.x; d.fy = d.y; })
@@ -431,13 +509,13 @@ function drawMap() {
   node.append('circle')
     .attr('r', (d: any) => rScale(d.score))
     .attr('fill', (d: any) => {
-      const sig = signalData?.find((s: any) => s.keyword === d.id);
+      const sig = allKw.find((s: any) => s.keyword === d.id);
       return SHAPE_COLOR[sig?.trend_shape || ''] || '#2a2a2a';
     })
     .attr('fill-opacity', 0.85)
     .on('mousemove', (event: MouseEvent, d: any) => {
       const box = mapDiv.getBoundingClientRect();
-      const sig = signalData?.find((s: any) => s.keyword === d.id);
+      const sig = allKw.find((s: any) => s.keyword === d.id);
       tooltip.style.display = 'block';
       tooltip.style.left = `${event.clientX - box.left + 12}px`;
       tooltip.style.top  = `${event.clientY - box.top  - 10}px`;
@@ -450,10 +528,8 @@ function drawMap() {
 
   node.append('text')
     .text((d: any) => d.id.length > 22 ? d.id.slice(0, 20) + '…' : d.id)
-    .attr('font-size', 9)
-    .attr('fill', '#888')
-    .attr('text-anchor', 'middle')
-    .attr('dy', (d: any) => rScale(d.score) + 12);
+    .attr('font-size', 9).attr('fill', '#888')
+    .attr('text-anchor', 'middle').attr('dy', (d: any) => rScale(d.score) + 12);
 
   sim.on('tick', () => {
     link
@@ -479,7 +555,7 @@ function drawWatchlist() {
   `).join('');
 }
 
-// ── Tab button styles (injected) ──────────────────────────────────────────────
+// ── Tab button + domain button styles ─────────────────────────────────────────
 const style = document.createElement('style');
 style.textContent = `
   .tab-btn {
@@ -491,6 +567,18 @@ style.textContent = `
   .tab-btn:hover { color: #e8e8e8; }
   .active-tab {
     background: #2a4226;
+    border-color: #7fff6e;
+    color: #7fff6e;
+  }
+  .domain-btn {
+    background: #161616;
+    border: 1px solid #2a2a2a;
+    color: #888;
+    transition: color 0.15s, border-color 0.15s;
+  }
+  .domain-btn:hover { color: #e8e8e8; }
+  .active-domain {
+    background: #1a1a1a;
     border-color: #7fff6e;
     color: #7fff6e;
   }

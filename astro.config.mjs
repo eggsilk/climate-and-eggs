@@ -7,6 +7,9 @@ export default defineConfig({
   site: 'https://eggsilk.github.io',
   base: '/climate-and-eggs',
   output: 'static',
+  server: {
+    port: process.env.PORT ? parseInt(process.env.PORT) : 4321,
+  },
   vite: {
     plugins: [tailwindcss()]
   }
