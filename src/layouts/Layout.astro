@@ -1,0 +1,79 @@
+---
+import '../styles/global.css';
+
+interface Props {
+  title: string;
+  description?: string;
+}
+
+const { title, description = "Climate tech signal — without the fluff." } = Astro.props;
+const currentPath = Astro.url.pathname;
+
+const nav = [
+  { href: "/",           label: "Home"      },
+  { href: "/signal",     label: "Signal"    },
+  { href: "/writing",    label: "Writing"   },
+  { href: "/curation",   label: "Curation"  },
+  { href: "/about",      label: "About"     },
+];
+---
+
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="description" content={description} />
+    <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap" rel="stylesheet" />
+    <title>{title} — Climate and Eggs</title>
+  </head>
+
+  <body class="min-h-screen flex flex-col">
+
+    <!-- Nav -->
+    <header style="border-bottom: 1px solid #2a2a2a;">
+      <nav class="max-w-5xl mx-auto px-6 py-5 flex items-center justify-between">
+        <a href="/" class="text-sm font-semibold tracking-widest uppercase" style="color: #e8e8e8; letter-spacing: 0.15em;">
+          Climate &amp; Eggs
+        </a>
+        <ul class="flex gap-7 text-sm" style="color: #888888;">
+          {nav.map(({ href, label }) => {
+            const active = href === "/"
+              ? currentPath === "/"
+              : currentPath.startsWith(href);
+            return (
+              <li>
+                <a
+                  href={href}
+                  style={active
+                    ? "color: #7fff6e;"
+                    : "color: #888888;"}
+                  class="transition-colors hover:text-white"
+                >
+                  {label}
+                </a>
+              </li>
+            );
+          })}
+        </ul>
+      </nav>
+    </header>
+
+    <!-- Page content -->
+    <main class="flex-1 max-w-5xl mx-auto w-full px-6 py-16">
+      <slot />
+    </main>
+
+    <!-- Footer -->
+    <footer style="border-top: 1px solid #2a2a2a;" class="text-sm py-8">
+      <div class="max-w-5xl mx-auto px-6 flex items-center justify-between" style="color: #888888;">
+        <span>Climate &amp; Eggs</span>
+        <span class="mono text-xs">signal, not noise</span>
+      </div>
+    </footer>
+
+  </body>
+</html>

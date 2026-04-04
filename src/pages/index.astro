@@ -1,0 +1,125 @@
+---
+import Layout from '../layouts/Layout.astro';
+---
+
+<Layout title="Home">
+
+  <!-- Lede -->
+  <section class="max-w-2xl mb-24">
+    <p class="mono text-xs mb-6" style="color: #7fff6e;">
+      CLIMATE &amp; EGGS
+    </p>
+    <h1 class="text-4xl font-semibold leading-tight mb-8" style="color: #e8e8e8; line-height: 1.2;">
+      Most climate content is fluff.<br />
+      This is the rest of it.
+    </h1>
+    <p class="text-lg leading-relaxed mb-6" style="color: #aaaaaa;">
+      AI slop, corporate ESG, recycled press releases. The further you dig into
+      online climate resources, the more you find the same slogans dressed in
+      different fonts. "Keep fossil fuels in the ground." "We already have the
+      solutions." What solutions? How, exactly?
+    </p>
+    <p class="text-lg leading-relaxed mb-6" style="color: #aaaaaa;">
+      I've been looking for a resource with real substance for years — one that
+      treats climate as an engineering and systems problem, not a marketing
+      opportunity. So I'm building it.
+    </p>
+    <p class="text-lg leading-relaxed" style="color: #aaaaaa;">
+      Climate &amp; Eggs tracks what's actually emerging in the science,
+      surfaces the technologies worth watching before they become headlines,
+      and tries to say something honest about what it all means.
+    </p>
+  </section>
+
+  <!-- Three columns -->
+  <section class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-24">
+
+    <a href="/signal" class="block group p-6 rounded-lg transition-colors"
+       style="background: #161616; border: 1px solid #2a2a2a;">
+      <p class="mono text-xs mb-3" style="color: #7fff6e;">SIGNAL</p>
+      <h2 class="text-base font-semibold mb-3" style="color: #e8e8e8;">
+        What's emerging right now
+      </h2>
+      <p class="text-sm leading-relaxed mb-4" style="color: #888888;">
+        An interactive tracker built on academic literature — scored by momentum,
+        recency, and citation velocity. Updated when the data says something new.
+      </p>
+      <span class="text-xs mono" style="color: #7fff6e;">Explore the tracker →</span>
+    </a>
+
+    <a href="/writing" class="block group p-6 rounded-lg transition-colors"
+       style="background: #161616; border: 1px solid #2a2a2a;">
+      <p class="mono text-xs mb-3" style="color: #7fff6e;">WRITING</p>
+      <h2 class="text-base font-semibold mb-3" style="color: #e8e8e8;">
+        A thesis, developed in public
+      </h2>
+      <p class="text-sm leading-relaxed mb-4" style="color: #888888;">
+        Exploratory writing on climate tech, the people working on it, and the
+        cognitive dissonance that runs through most of it. Honest, not optimistic.
+      </p>
+      <span class="text-xs mono" style="color: #7fff6e;">Read the writing →</span>
+    </a>
+
+    <a href="/curation" class="block group p-6 rounded-lg transition-colors"
+       style="background: #161616; border: 1px solid #2a2a2a;">
+      <p class="mono text-xs mb-3" style="color: #7fff6e;">CURATION</p>
+      <h2 class="text-base font-semibold mb-3" style="color: #e8e8e8;">
+        Things worth your time
+      </h2>
+      <p class="text-sm leading-relaxed mb-4" style="color: #888888;">
+        A growing list of resources, organisations, and tools that I've found
+        genuinely useful — filtered for substance, not for clicks.
+      </p>
+      <span class="text-xs mono" style="color: #7fff6e;">Browse the list →</span>
+    </a>
+
+  </section>
+
+  <!-- Signal teaser (static) -->
+  <section>
+    <div class="flex items-baseline justify-between mb-6">
+      <p class="mono text-xs" style="color: #7fff6e;">LATEST SIGNALS</p>
+      <a href="/signal" class="mono text-xs" style="color: #888888;">see all →</a>
+    </div>
+    <div id="signal-teaser" class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3">
+      <!-- Populated by client-side JS from /data/signals.json -->
+    </div>
+  </section>
+
+</Layout>
+
+<script>
+async function loadTeaser() {
+  try {
+    const res = await fetch('/data/signals.json');
+    const data = await res.json();
+    const top = data.signals.slice(0, 6);
+    const container = document.getElementById('signal-teaser');
+    if (!container) return;
+
+    const shapeColor: Record<string, string> = {
+      emerging:  '#7fff6e',
+      nascent:   '#f5c842',
+      stable:    '#888888',
+      declining: '#e05c5c',
+      spike:     '#f5c842',
+    };
+
+    container.innerHTML = top.map((s: any) => `
+      <div style="background:#161616;border:1px solid #2a2a2a;border-radius:8px;padding:16px;">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;">
+          <span class="mono" style="font-size:10px;color:${shapeColor[s.trend_shape] || '#888'};">
+            ${s.trend_shape.toUpperCase()}
+          </span>
+          <span class="mono" style="font-size:11px;color:#888;">${s.composite_score.toFixed(2)}</span>
+        </div>
+        <p style="font-size:13px;color:#e8e8e8;font-weight:500;">${s.keyword}</p>
+        <p class="mono" style="font-size:10px;color:#555;margin-top:6px;">${s.sparkline || ''}</p>
+      </div>
+    `).join('');
+  } catch {
+    // data not yet available — silent
+  }
+}
+loadTeaser();
+</script>

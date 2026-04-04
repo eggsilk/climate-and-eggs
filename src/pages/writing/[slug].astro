@@ -1,0 +1,56 @@
+---
+import Layout from '../../layouts/Layout.astro';
+import { posts } from '../../data/posts';
+
+export function getStaticPaths() {
+  return posts.map(post => ({ params: { slug: post.slug }, props: { post } }));
+}
+
+const { post } = Astro.props;
+---
+
+<Layout title={post.title} description={post.excerpt}>
+
+  <div class="max-w-2xl">
+
+    <div class="mb-10">
+      <a href="/writing" class="mono text-xs" style="color: #555;">← Writing</a>
+    </div>
+
+    <p class="mono text-xs mb-4" style="color: #555;">{post.date}</p>
+    <h1 class="text-3xl font-semibold mb-8 leading-tight" style="color: #e8e8e8; line-height: 1.25;">
+      {post.title}
+    </h1>
+
+    <div class="prose" set:html={post.content} />
+
+  </div>
+
+</Layout>
+
+<style>
+  .prose {
+    color: #aaaaaa;
+    font-size: 1rem;
+    line-height: 1.8;
+    max-width: 65ch;
+  }
+  .prose p {
+    margin-bottom: 1.5rem;
+  }
+  .prose h2 {
+    color: #e8e8e8;
+    font-size: 1.25rem;
+    font-weight: 600;
+    margin: 2.5rem 0 1rem;
+  }
+  .prose blockquote {
+    border-left: 3px solid #2a2a2a;
+    padding-left: 1.25rem;
+    color: #666;
+    margin: 2rem 0;
+  }
+  .prose a {
+    color: #7fff6e;
+  }
+</style>

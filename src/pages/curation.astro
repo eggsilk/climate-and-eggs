@@ -1,0 +1,71 @@
+---
+import Layout from '../layouts/Layout.astro';
+
+const categories = [
+  {
+    label: "Journals & Research",
+    items: [
+      { title: "Nature Energy", url: "https://www.nature.com/nenergy", note: "The best single source for energy research with commercial relevance." },
+      { title: "Joule (Cell Press)", url: "https://www.cell.com/joule/home", note: "Rigorous, focused on sustainable energy. Higher signal-to-noise than most." },
+      { title: "Energy & Environmental Science", url: "https://pubs.rsc.org/en/journals/journalissues/ee", note: "RSC journal covering chemistry and engineering of energy systems." },
+      { title: "Nature Climate Change", url: "https://www.nature.com/nclimate", note: "Broader scope. Good for understanding what's being measured and why it matters." },
+    ],
+  },
+  {
+    label: "Organisations (Europe)",
+    items: [
+      { title: "Climate-KIC", url: "https://www.climate-kic.org", note: "EU knowledge and innovation community on climate. Good network, mixed signal quality." },
+      { title: "European Innovation Council (EIC)", url: "https://eic.ec.europa.eu", note: "Funds deep tech startups. Useful for finding what the EU considers worth backing." },
+      { title: "Breakthrough Energy Europe", url: "https://breakthroughenergy.org", note: "Gates-backed, serious capital, focused on hard tech. High signal." },
+    ],
+  },
+  {
+    label: "Reading",
+    items: [
+      { title: "Heatmap News", url: "https://heatmap.news", note: "Best daily climate news. Treats readers as adults." },
+      { title: "Canary Media", url: "https://www.canarymedia.com", note: "Good on clean energy policy and infrastructure. Less hype than most." },
+      { title: "Volts (podcast)", url: "https://www.volts.wtf", note: "David Roberts. Genuinely detailed conversations on energy and climate policy." },
+    ],
+  },
+];
+---
+
+<Layout title="Curation" description="Resources worth your time — filtered for substance.">
+
+  <div class="mb-12">
+    <p class="mono text-xs mb-4" style="color: #7fff6e;">CURATION</p>
+    <h1 class="text-3xl font-semibold mb-4" style="color: #e8e8e8;">
+      Things worth your time
+    </h1>
+    <p class="text-base leading-relaxed max-w-2xl" style="color: #888888;">
+      Filtered for substance. Annotated so you know why it's here.
+      No affiliate links, no sponsored content.
+    </p>
+  </div>
+
+  <div class="space-y-14">
+    {categories.map((cat) => (
+      <section>
+        <p class="mono text-xs mb-6 pb-3" style="color: #7fff6e; border-bottom: 1px solid #2a2a2a;">
+          {cat.label.toUpperCase()}
+        </p>
+        <div class="space-y-6">
+          {cat.items.map((item) => (
+            <div class="flex gap-6">
+              <div class="flex-1">
+                <a href={item.url} target="_blank" rel="noopener noreferrer"
+                   class="text-sm font-medium" style="color: #e8e8e8;">
+                  {item.title} ↗
+                </a>
+                <p class="text-sm mt-1 leading-relaxed" style="color: #555;">
+                  {item.note}
+                </p>
+              </div>
+            </div>
+          ))}
+        </div>
+      </section>
+    ))}
+  </div>
+
+</Layout>

@@ -1,0 +1,44 @@
+---
+import Layout from '../layouts/Layout.astro';
+
+// Posts are loaded from a static data file.
+// When you add a new post, add an entry to src/data/posts.ts
+import { posts } from '../data/posts';
+---
+
+<Layout title="Writing" description="Exploratory writing on climate tech, systems, and the people working on both.">
+
+  <div class="mb-12">
+    <p class="mono text-xs mb-4" style="color: #7fff6e;">WRITING</p>
+    <h1 class="text-3xl font-semibold mb-4" style="color: #e8e8e8;">
+      A thesis, developed in public
+    </h1>
+    <p class="text-base leading-relaxed max-w-2xl" style="color: #888888;">
+      Exploratory writing on climate tech, the cognitive dissonance of the people
+      working on it, and whether any of it is going anywhere useful.
+      Not optimistic. Not cynical. Trying to see clearly.
+    </p>
+  </div>
+
+  <div class="space-y-px">
+    {posts.map((post) => (
+      <a href={`/writing/${post.slug}`}
+         class="flex items-baseline justify-between py-5 group transition-colors"
+         style="border-bottom: 1px solid #1e1e1e;">
+        <div class="flex-1 pr-8">
+          <h2 class="text-base font-medium mb-1 group-hover:text-white transition-colors"
+              style="color: #e8e8e8;">
+            {post.title}
+          </h2>
+          <p class="text-sm leading-relaxed" style="color: #555;">
+            {post.excerpt}
+          </p>
+        </div>
+        <span class="mono text-xs flex-shrink-0" style="color: #444;">
+          {post.date}
+        </span>
+      </a>
+    ))}
+  </div>
+
+</Layout>
