@@ -31,12 +31,20 @@ import Layout from '../layouts/Layout.astro';
     <button class="domain-btn active-domain mono text-xs px-3 py-1 rounded" data-domain="all">All domains</button>
   </div>
 
+  <!-- Keyword level filter -->
+  <div id="level-filter" class="flex flex-wrap gap-2 mb-8 items-center">
+    <span class="mono text-xs" style="color:#555;">level:</span>
+    <button class="level-btn active-level mono text-xs px-3 py-1 rounded" data-level="system">system</button>
+    <button class="level-btn active-level mono text-xs px-3 py-1 rounded" data-level="component">component</button>
+    <button class="level-btn active-level mono text-xs px-3 py-1 rounded" data-level="constraint">constraint</button>
+    <button class="level-btn mono text-xs px-3 py-1 rounded" data-level="material_method">material / method</button>
+    <button class="level-btn mono text-xs px-3 py-1 rounded" data-level="process">process</button>
+  </div>
+
   <!-- Tab controls -->
   <div class="flex gap-2 mb-8" id="tab-controls">
     <button data-tab="board"  class="tab-btn active-tab mono text-xs px-4 py-2 rounded">Signal Board</button>
     <button data-tab="trends" class="tab-btn mono text-xs px-4 py-2 rounded">Trends</button>
-    <button data-tab="map"    class="tab-btn mono text-xs px-4 py-2 rounded">Concept Map</button>
-    <button data-tab="watch"  class="tab-btn mono text-xs px-4 py-2 rounded">Watchlist</button>
   </div>
 
   <!-- ── Signal Board ── -->
@@ -104,31 +112,6 @@ import Layout from '../layouts/Layout.astro';
     </div>
   </div>
 
-  <!-- ── Concept Map ── -->
-  <div id="tab-map" class="tab-panel" style="display:none;">
-    <p class="text-xs mb-4" style="color: #555;">
-      Force-directed graph of concept co-occurrence. Lines connect keywords that
-      appear together in the same papers. Drag nodes to explore.
-    </p>
-    <div id="map-chart" style="width:100%;height:560px;position:relative;
-         background:#0d0d0d;border:1px solid #2a2a2a;border-radius:8px;overflow:hidden;">
-      <svg id="map-svg" width="100%" height="100%"></svg>
-      <div id="map-tooltip"
-           style="position:absolute;display:none;background:#161616;border:1px solid #2a2a2a;
-                  border-radius:6px;padding:8px 12px;font-size:11px;pointer-events:none;">
-      </div>
-    </div>
-  </div>
-
-  <!-- ── Watchlist ── -->
-  <div id="tab-watch" class="tab-panel" style="display:none;">
-    <p class="text-xs mb-6 max-w-xl" style="color: #555;">
-      Sub-threshold signals — keywords that didn't clear the frequency floor
-      but were surfaced by semantic or string expansion methods.
-      Low confidence. Requires human review.
-    </p>
-    <div id="watch-list" class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3"></div>
-  </div>
 
 </Layout>
 
@@ -137,9 +120,8 @@ import * as d3 from 'd3';
 
 // ── State ─────────────────────────────────────────────────────────────────────
 let fullData: any   = null;   // raw signal_data.json
-let expansionData: any = null;
-let watchlistData: any = null;
 let currentDomain   = 'all'; // selected domain key
+let activeLevels    = new Set(['system', 'component', 'constraint']); // default view
 
 const SHAPE_COLOR: Record<string, string> = {
   emerging:  '#7fff6e',
@@ -153,34 +135,49 @@ const SHAPE_COLOR: Record<string, string> = {
 // ── Helpers ───────────────────────────────────────────────────────────────────
 function activeKeywords(): any[] {
   if (!fullData || !fullData.domains) return [];
-  if (currentDomain === 'all') {
-    return Object.values(fullData.domains).flatMap((d: any) => d.keywords);
-  }
-  return fullData.domains[currentDomain]?.keywords ?? [];
+  const domainKws = currentDomain === 'all'
+    ? Object.values(fullData.domains).flatMap((d: any) => d.keywords)
+    : (fullData.domains[currentDomain]?.keywords ?? []);
+  return domainKws.filter((k: any) => {
+    const level = k.keyword_level ?? 'system';
+    return activeLevels.has(level);
+  });
 }
 
 // ── Load data ─────────────────────────────────────────────────────────────────
 async function loadAll() {
   const base = import.meta.env.BASE_URL.replace(/\/$/, '');
   try {
-    const [sdRes, eRes, wRes] = await Promise.all([
-      fetch(`${base}/data/signal_data.json`),
-      fetch(`${base}/data/expansion.json`),
-      fetch(`${base}/data/watchlist.json`),
-    ]);
-    fullData      = await sdRes.json();
-    expansionData = (await eRes.json()).expansion ?? null;
-    watchlistData = (await wRes.json()).watchlist ?? null;
+    const res = await fetch(`${base}/data/signal_data.json`);
+    fullData = await res.json();
   } catch {
     // data not yet available
   }
 
   updateMetaBar();
   buildDomainFilter();
+  buildLevelFilter();
   drawBoard();
   drawTrends();
-  drawMap();
-  drawWatchlist();
+}
+
+function buildLevelFilter() {
+  document.querySelectorAll('.level-btn').forEach(btn => {
+    btn.addEventListener('click', () => {
+      const level = (btn as HTMLElement).dataset.level!;
+      if (activeLevels.has(level)) {
+        if (activeLevels.size > 1) {  // always keep at least one active
+          activeLevels.delete(level);
+          btn.classList.remove('active-level');
+        }
+      } else {
+        activeLevels.add(level);
+        btn.classList.add('active-level');
+      }
+      drawBoard();
+      renderTrendsTable();
+    });
+  });
 }
 
 function updateMetaBar() {
@@ -349,8 +346,9 @@ function openDrill(d: any) {
   const panel = document.getElementById('drill-panel')!;
   panel.style.display = 'block';
   document.getElementById('drill-keyword')!.textContent = d.keyword;
+  const rawStr = d.composite_score_raw != null ? ` · raw score ${d.composite_score_raw.toFixed(3)}` : '';
   document.getElementById('drill-meta')!.textContent =
-    `${d.trend_shape} · score ${d.composite_score.toFixed(2)} · ${d.total_occurrences} papers · driver: ${d.primary_driver}`;
+    `${d.trend_shape} · domain rank ${d.composite_score.toFixed(2)}${rawStr} · ${d.total_occurrences} papers · driver: ${d.primary_driver}`;
 
   const scores = [
     { label: 'Momentum',      val: d.momentum_score },
@@ -455,105 +453,6 @@ function renderTrendsTable() {
   }
 };
 
-// ── Concept Map ───────────────────────────────────────────────────────────────
-function drawMap() {
-  const W = document.getElementById('map-chart')?.getBoundingClientRect().width || 800;
-  const H = 560;
-  const svg = d3.select('#map-svg').attr('viewBox', `0 0 ${W} ${H}`);
-  svg.selectAll('*').remove();
-
-  if (!expansionData || expansionData.length === 0) {
-    svg.append('text').attr('x', W/2).attr('y', H/2)
-      .attr('text-anchor', 'middle').attr('fill', '#444').attr('font-size', 13)
-      .text('Run the tracker to populate the concept map');
-    return;
-  }
-
-  const allKw = activeKeywords();
-  const nodeMap = new Map<string, { id: string; score: number }>();
-  const links: { source: string; target: string; value: number }[] = [];
-
-  expansionData.forEach((entry: any) => {
-    if (!nodeMap.has(entry.seed)) {
-      const s = allKw.find((d: any) => d.keyword === entry.seed);
-      nodeMap.set(entry.seed, { id: entry.seed, score: s?.composite_score ?? 0.5 });
-    }
-    entry.neighbors.slice(0, 6).forEach((nb: any) => {
-      if (!nodeMap.has(nb.keyword)) nodeMap.set(nb.keyword, { id: nb.keyword, score: 0 });
-      links.push({ source: entry.seed, target: nb.keyword, value: nb.cooccurrence_count });
-    });
-  });
-
-  const nodes = Array.from(nodeMap.values());
-  const rScale = d3.scaleLinear().domain([0, 1]).range([5, 16]);
-  const tooltip = document.getElementById('map-tooltip')!;
-  const mapDiv  = document.getElementById('map-chart')!;
-
-  const sim = d3.forceSimulation(nodes as any)
-    .force('link', d3.forceLink(links).id((d: any) => d.id).distance(90).strength(0.4))
-    .force('charge', d3.forceManyBody().strength(-180))
-    .force('center', d3.forceCenter(W / 2, H / 2))
-    .force('collision', d3.forceCollide().radius((d: any) => rScale(d.score) + 8));
-
-  const link = svg.append('g').selectAll('line').data(links).join('line')
-    .attr('stroke', '#2a2a2a').attr('stroke-width', 1);
-
-  const node = svg.append('g').selectAll('g').data(nodes).join('g')
-    .style('cursor', 'pointer')
-    .call(d3.drag<SVGGElement, any>()
-      .on('start', (event, d) => { if (!event.active) sim.alphaTarget(0.3).restart(); d.fx = d.x; d.fy = d.y; })
-      .on('drag',  (event, d) => { d.fx = event.x; d.fy = event.y; })
-      .on('end',   (event, d) => { if (!event.active) sim.alphaTarget(0); d.fx = null; d.fy = null; }) as any
-    );
-
-  node.append('circle')
-    .attr('r', (d: any) => rScale(d.score))
-    .attr('fill', (d: any) => {
-      const sig = allKw.find((s: any) => s.keyword === d.id);
-      return SHAPE_COLOR[sig?.trend_shape || ''] || '#2a2a2a';
-    })
-    .attr('fill-opacity', 0.85)
-    .on('mousemove', (event: MouseEvent, d: any) => {
-      const box = mapDiv.getBoundingClientRect();
-      const sig = allKw.find((s: any) => s.keyword === d.id);
-      tooltip.style.display = 'block';
-      tooltip.style.left = `${event.clientX - box.left + 12}px`;
-      tooltip.style.top  = `${event.clientY - box.top  - 10}px`;
-      tooltip.innerHTML = `
-        <p style="color:#e8e8e8;font-weight:600;">${d.id}</p>
-        ${sig ? `<p style="color:#555;font-size:10px;">${sig.trend_shape} · ${sig.composite_score.toFixed(2)}</p>` : ''}
-      `;
-    })
-    .on('mouseleave', () => { tooltip.style.display = 'none'; });
-
-  node.append('text')
-    .text((d: any) => d.id.length > 22 ? d.id.slice(0, 20) + '…' : d.id)
-    .attr('font-size', 9).attr('fill', '#888')
-    .attr('text-anchor', 'middle').attr('dy', (d: any) => rScale(d.score) + 12);
-
-  sim.on('tick', () => {
-    link
-      .attr('x1', (d: any) => d.source.x).attr('y1', (d: any) => d.source.y)
-      .attr('x2', (d: any) => d.target.x).attr('y2', (d: any) => d.target.y);
-    node.attr('transform', (d: any) => `translate(${d.x},${d.y})`);
-  });
-}
-
-// ── Watchlist ─────────────────────────────────────────────────────────────────
-function drawWatchlist() {
-  const container = document.getElementById('watch-list')!;
-  if (!watchlistData || watchlistData.length === 0) {
-    container.innerHTML = '<p style="color:#555;font-size:13px;">No watchlist data yet.</p>';
-    return;
-  }
-  container.innerHTML = watchlistData.map((w: any) => `
-    <div style="background:#161616;border:1px solid #2a2a2a;border-radius:8px;padding:14px;">
-      <p style="color:#e8e8e8;font-size:13px;font-weight:500;margin-bottom:6px;">${w.keyword}</p>
-      <p class="mono" style="color:#555;font-size:10px;">freq: ${w.raw_frequency} · ${w.method}</p>
-      <p class="mono" style="color:#f5c842;font-size:9px;margin-top:4px;">on radar</p>
-    </div>
-  `).join('');
-}
 
 // ── Tab button + domain button styles ─────────────────────────────────────────
 const style = document.createElement('style');
@@ -581,6 +480,18 @@ style.textContent = `
     background: #1a1a1a;
     border-color: #7fff6e;
     color: #7fff6e;
+  }
+  .level-btn {
+    background: #161616;
+    border: 1px solid #2a2a2a;
+    color: #555;
+    transition: color 0.15s, border-color 0.15s;
+  }
+  .level-btn:hover { color: #888; }
+  .active-level {
+    background: #1a1a1a;
+    border-color: #555;
+    color: #e8e8e8;
   }
 `;
 document.head.appendChild(style);
