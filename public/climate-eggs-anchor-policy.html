@@ -1,0 +1,140 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1"/>
+<title>Climate &amp; Eggs — policy anchor</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet"/>
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+html,body{min-height:100%}
+body{background:#e8e4da;color:#16140f;font-family:'Inter',system-ui,sans-serif;-webkit-font-smoothing:antialiased}
+
+.hdr{display:flex;justify-content:space-between;align-items:flex-start;padding:26px 34px}
+.wm{font-size:30px;font-weight:600;letter-spacing:-.02em;line-height:.9}
+.hdr-r{display:flex;gap:54px;align-items:flex-start;font-size:13px}
+.nav a{color:#16140f;text-decoration:none;margin-right:14px}
+.nav a.on{text-decoration:underline;text-underline-offset:3px}
+.nav a.dim{color:#8c887d}
+.clock{font-family:'JetBrains Mono',monospace;font-size:12px}
+.contact a{color:#16140f;text-decoration:underline;text-underline-offset:3px;font-size:13px}
+
+/* subject */
+.subject{display:flex;flex-direction:column;align-items:center;padding-top:30px}
+.tag{font-family:'JetBrains Mono',monospace;font-size:10px;letter-spacing:.34em;text-transform:uppercase;color:#9a968b;margin-bottom:18px}
+.board-wrap{perspective:600px}
+.board{display:flex;gap:3px}
+.cell{width:23px;height:36px;background:#0c0d0e;border-radius:2px;display:flex;align-items:center;justify-content:center;color:#ecd29a;font-family:'JetBrains Mono',monospace;font-size:18px;font-weight:500;position:relative;transition:transform .13s ease;box-shadow:inset 0 1px 0 rgba(255,255,255,.06)}
+.cell::after{content:"";position:absolute;left:0;right:0;top:50%;height:1px;background:rgba(0,0,0,.6)}
+.rel{font-family:'JetBrains Mono',monospace;font-size:11px;letter-spacing:.18em;text-transform:uppercase;color:#9a968b;margin-top:22px}
+
+/* connections */
+.connections{max-width:1100px;margin:36px auto 90px;padding:0 40px}
+.tech-head{display:flex;align-items:baseline;justify-content:space-between;border-top:1.5px solid #16140f;padding-top:14px;margin-bottom:20px}
+.tech-head .lt{display:flex;align-items:baseline;gap:14px}
+.tech-head .name{font-size:23px;font-weight:500}
+.tech-head .bc{font-family:'JetBrains Mono',monospace;font-size:11px;color:#9a968b}
+.tech-head .meta{font-family:'JetBrains Mono',monospace;font-size:10px;letter-spacing:.12em;text-transform:uppercase;color:#8c887d}
+
+.layers{display:grid;grid-template-columns:repeat(4,1fr);gap:28px;margin-bottom:18px}
+.col-lab{font-family:'JetBrains Mono',monospace;font-size:10px;letter-spacing:.14em;text-transform:uppercase;color:#16140f;margin-bottom:2px}
+.col-rel{font-family:'JetBrains Mono',monospace;font-size:9.5px;letter-spacing:.08em;text-transform:uppercase;color:#a7a298;margin-bottom:12px}
+.item{border-top:1px solid #d9d5c9;padding:9px 0;font-size:13.5px;line-height:1.35;color:#3a3730;display:flex;justify-content:space-between;gap:12px;cursor:pointer;transition:color .2s}
+.item:hover{color:#16140f}
+.item .c{font-family:'JetBrains Mono',monospace;font-size:9px;letter-spacing:.08em;flex:0 0 auto;padding-top:2px}
+.item.inv{flex-direction:column;gap:2px}
+.item.inv .sub{font-family:'JetBrains Mono',monospace;font-size:10.5px;color:#8c887d;letter-spacing:.02em}
+.st-defunct{color:#a8442f}
+.c.high{color:#16140f}.c.med{color:#8c887d}.c.low{color:#bcb7aa}
+
+/* collapsed fan-out */
+.more-lab{font-family:'JetBrains Mono',monospace;font-size:10px;letter-spacing:.2em;text-transform:uppercase;color:#9a968b;margin:42px 0 4px}
+.tech-row{display:flex;align-items:baseline;justify-content:space-between;border-top:1px solid #d6d2c6;padding:15px 2px;cursor:pointer;transition:padding-left .25s}
+.tech-row:hover{padding-left:8px}
+.tech-row .lt{display:flex;align-items:baseline;gap:12px}
+.tech-row .name{font-size:16px;font-weight:400;color:#16140f}
+.tech-row .sec{font-family:'JetBrains Mono',monospace;font-size:10px;text-transform:uppercase;letter-spacing:.1em;color:#a7a298}
+.tech-row .meta{font-family:'JetBrains Mono',monospace;font-size:10px;letter-spacing:.12em;text-transform:uppercase;color:#8c887d}
+.tech-row .pl{color:#bcb7aa;margin-left:16px;font-size:15px}
+</style>
+</head>
+<body>
+
+<div class="hdr">
+  <div class="wm">Climate&nbsp;&amp;&nbsp;Eggs</div>
+  <div class="hdr-r">
+    <div class="nav"><a href="#" class="on">Index</a><a href="#" class="dim">About</a></div>
+    <div class="clock" id="clock">CEST —</div>
+    <div class="contact"><a href="#">Contact</a></div>
+  </div>
+</div>
+
+<div class="subject">
+  <div class="tag">Policy · anchor</div>
+  <div class="board-wrap"><div class="board" id="board"></div></div>
+  <div class="rel" id="rel">demands ↓</div>
+</div>
+
+<div class="connections" id="conn"></div>
+
+<script>
+var ANCHOR={label:"UK CO2 VEHICLE TAX (2017)"};
+var TECHS=[
+ {name:"Lithium-ion battery",sector:"Transport",path:"Transport › EV battery › Lithium-based",conf:"high",open:true,layers:{
+   academia:[{t:"Li-ion current-density imaging (2022)",c:"high"},{t:"Li-ion thermal-runaway modelling (2024)",c:"high"},{t:"Nonflammable Li-ion electrolyte (2025)",c:"high"},{t:"Nano-structured Si anodes (review)",c:"med"},{t:"Anion-rich solvation electrolyte",c:"med"}],
+   patents:[{t:"Applied Materials — electrode paste",c:"high"},{t:"Applied Materials — ceramic separator",c:"high"},{t:"Sila Nanotechnologies",c:"high"},{t:"Yushin Gleb",c:"high"},{t:"Sion Power Corp",c:"low"},{t:"Ampaire Inc",c:"low"}],
+   grants:[{t:"Oulun Yliopisto",c:"high"}],
+   investment:[{co:"Sila Nanotechnologies",sub:"Series G · $375M · 2024",c:"high"},{co:"Sion Power",sub:"Series A · $75M · 2024",c:"high"},{co:"Ion Storage Systems",sub:"Series A · $30M · 2025",c:"med"},{co:"Coreshell",sub:"Series A · $24M · 2025",c:"med"},{co:"Forge Nano",sub:"Series C · ~$55M · 2024",c:"med"},{co:"Cuberg",sub:"Acquired 2021 · defunct",c:"low",defunct:true}]
+ }},
+ {name:"Fast and ultra-fast charging",sector:"Transport",conf:"high"},
+ {name:"Battery electric passenger car",sector:"Transport",conf:"high"},
+ {name:"Hydrometallurgical battery recycling",sector:"Critical minerals",conf:"med"},
+ {name:"Direct lithium extraction from brine",sector:"Critical minerals",conf:"med"},
+ {name:"Lithium-ion storage battery",sector:"Energy storage",conf:"low"},
+ {name:"Sodium-ion battery",sector:"Transport",conf:"low"},
+ {name:"All solid-state battery",sector:"Transport",conf:"low"}
+];
+var LAYER_REL={academia:"researches",patents:"patents inventions in",grants:"funds research on",investment:"capital into"};
+
+// clock
+(function(){function t(){var d=new Date();document.getElementById('clock').textContent='CEST '+String(d.getHours()).padStart(2,'0')+':'+String(d.getMinutes()).padStart(2,'0');}t();setInterval(t,10000);})();
+
+// board (one-time flap-in)
+(function(){
+  var N=26,FLAP="ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789-().",board=document.getElementById('board'),cells=[];
+  for(var i=0;i<N;i++){var c=document.createElement('div');c.className='cell';var s=document.createElement('span');c.appendChild(s);board.appendChild(c);cells.push({el:c,sp:s});}
+  function pad(t){t=t.toUpperCase().slice(0,N);var p=N-t.length,l=Math.floor(p/2);return ' '.repeat(l)+t+' '.repeat(p-l);}
+  var p=pad(ANCHOR.label);
+  for(var i=0;i<N;i++){(function(i){var ch=p[i]===' '?'':p[i];if(!ch)return;var steps=5+Math.floor(Math.random()*16),step=0;
+    (function f(){var last=step>=steps;var x=last?ch:FLAP[Math.floor(Math.random()*FLAP.length)];cells[i].el.style.transform='rotateX(88deg)';setTimeout(function(){cells[i].sp.textContent=x;cells[i].el.style.transform='rotateX(0deg)';},55);if(!last){step++;setTimeout(f,92);}})();
+  })(i);}
+})();
+
+document.getElementById('rel').textContent='demands ↓  '+TECHS.length+' technologies';
+
+// connections
+var conn=document.getElementById('conn');
+function chip(c){return '<span class="c '+c+'">'+c.toUpperCase()+'</span>';}
+function itemRow(it){return '<div class="item"><span>'+it.t+'</span>'+chip(it.c)+'</div>';}
+function invRow(it){return '<div class="item inv"><span'+(it.defunct?' class="st-defunct"':'')+'>'+it.co+'</span><span class="sub'+(it.defunct?' st-defunct':'')+'">'+it.sub+'</span></div>';}
+function col(key,arr){
+  var rows = key==='investment' ? arr.map(invRow).join('') : arr.map(itemRow).join('');
+  return '<div class="col"><div class="col-lab">'+key+'</div><div class="col-rel">'+LAYER_REL[key]+'</div>'+rows+'</div>';
+}
+var html='';
+TECHS.forEach(function(tech){
+  if(tech.open){
+    html+='<div class="tech-head"><div class="lt"><span class="name">'+tech.name+'</span><span class="bc">'+(tech.path||tech.sector)+'</span></div><span class="meta">demanded · '+tech.conf+'</span></div>';
+    html+='<div class="layers">'+col('academia',tech.layers.academia)+col('patents',tech.layers.patents)+col('grants',tech.layers.grants)+col('investment',tech.layers.investment)+'</div>';
+  }
+});
+html+='<div class="more-lab">+ '+(TECHS.length-1)+' more technologies this policy demands</div>';
+TECHS.forEach(function(tech){
+  if(!tech.open){
+    html+='<div class="tech-row"><div class="lt"><span class="name">'+tech.name+'</span><span class="sec">'+tech.sector+'</span></div><span class="meta">demanded · '+tech.conf+'<span class="pl">+</span></span></div>';
+  }
+});
+conn.innerHTML=html;
+</script>
+</body>
+</html>

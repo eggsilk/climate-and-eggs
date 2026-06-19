@@ -1,0 +1,162 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1"/>
+<title>Climate &amp; Eggs</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet"/>
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+html,body{height:100%}
+body{background:#e8e4da;color:#16140f;font-family:'Inter',system-ui,sans-serif;-webkit-font-smoothing:antialiased}
+.page{position:relative;width:100%;height:100vh;overflow:hidden}
+
+.hdr{position:absolute;top:0;left:0;right:0;display:flex;justify-content:space-between;align-items:flex-start;padding:26px 34px;z-index:20}
+.wm{font-size:30px;font-weight:600;letter-spacing:-.02em;line-height:.9}
+.hdr-r{display:flex;gap:54px;align-items:flex-start;font-size:13px}
+.nav a{color:#16140f;text-decoration:none;margin-right:14px}
+.nav a.on{text-decoration:underline;text-underline-offset:3px}
+.nav a.dim{color:#8c887d}
+.clock{font-family:'JetBrains Mono',monospace;font-size:12px}
+.contact a{color:#16140f;text-decoration:underline;text-underline-offset:3px}
+
+/* left layer selector */
+.layers{position:absolute;left:38px;top:50%;transform:translateY(-50%);display:flex;flex-direction:column;gap:7px;z-index:16}
+.layers button{background:none;border:0;font-family:'Inter';font-size:18px;color:#a7a298;cursor:pointer;text-align:left;padding:2px 0;letter-spacing:-.01em;transition:color .2s,font-size .25s,padding-left .25s}
+.layers button:hover{color:#16140f;padding-left:6px}
+.layers button.active{color:#000;font-weight:600;font-size:24px;padding-left:16px}
+
+/* stage */
+.stage{position:absolute;inset:0;z-index:14}
+.feed{position:absolute;left:0;right:0;top:0;bottom:75vh;overflow:hidden;display:flex;flex-direction:column;justify-content:flex-end;opacity:0;transition:opacity .6s ease;-webkit-mask-image:linear-gradient(transparent,#000 32%);mask-image:linear-gradient(transparent,#000 32%)}
+.page[data-state="1"] .feed{opacity:1}
+.list{will-change:transform}
+.li{height:30px;line-height:30px;font-size:15px;color:#a7a298;text-align:center;cursor:pointer;transition:color .25s,opacity .5s;white-space:nowrap}
+.li:hover{color:#16140f}
+.li.dropping{opacity:0}
+
+.center{position:absolute;left:0;right:0;top:25vh;display:flex;flex-direction:column;align-items:center}
+.board-wrap{perspective:600px;margin-bottom:26px}
+.board{display:flex;gap:3px}
+.cell{width:23px;height:36px;background:#0c0d0e;border-radius:2px;display:flex;align-items:center;justify-content:center;color:#ecd29a;font-family:'JetBrains Mono',monospace;font-size:18px;font-weight:500;position:relative;transform-style:preserve-3d;transition:transform .13s ease;box-shadow:inset 0 1px 0 rgba(255,255,255,.06)}
+.cell::after{content:"";position:absolute;left:0;right:0;top:50%;height:1px;background:rgba(0,0,0,.6);transform:translateY(-.5px)}
+
+#searchwrap{display:flex;flex-direction:column;align-items:center;width:100%;opacity:0;transform:translateY(10px);transition:opacity .55s ease .08s,transform .55s cubic-bezier(.4,0,.2,1) .08s}
+.page[data-state="0"] #searchwrap{pointer-events:none}
+.page[data-state="1"] #searchwrap{opacity:1;transform:translateY(0)}
+.search{display:flex;align-items:center;gap:10px;width:460px;max-width:64vw;border-bottom:1px solid #b9b4a8;padding:9px 4px;transition:border-color .3s}
+.search:focus-within{border-color:#16140f}
+.search svg{width:15px;height:15px;flex:0 0 auto;stroke:#7d7a70}
+.search input{flex:1;border:0;background:transparent;outline:none;font-family:'Inter';font-size:15px;color:#16140f}
+.search input::placeholder{color:#9a968b}
+.results{width:460px;max-width:64vw;margin-top:4px}
+.res{display:flex;justify-content:space-between;align-items:baseline;gap:14px;padding:9px 4px;border-top:1px solid #d9d5c9;font-size:14px;color:#3a3730;cursor:pointer;transition:color .18s,padding-left .18s}
+.res:hover{color:#16140f;padding-left:5px}
+.res .nm{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.res .ty{font-family:'JetBrains Mono',monospace;font-size:9px;letter-spacing:.12em;text-transform:uppercase;color:#bcb7aa;flex:0 0 auto}
+</style>
+</head>
+<body>
+<div class="page" id="page" data-state="0">
+
+  <div class="hdr">
+    <div class="wm">Climate&nbsp;&amp;&nbsp;Eggs</div>
+    <div class="hdr-r">
+      <div class="nav"><a href="#" class="on">Index</a><a href="#" class="dim">About</a></div>
+      <div class="clock" id="clock">CEST —</div>
+      <div class="contact"><a href="#">Contact</a></div>
+    </div>
+  </div>
+
+  <nav class="layers" id="layers">
+    <button data-layer="technology">Technology</button>
+    <button data-layer="academia">Academia</button>
+    <button data-layer="policy">Policy</button>
+    <button data-layer="patents">Patents</button>
+    <button data-layer="investments">Investments</button>
+  </nav>
+
+  <div class="stage">
+    <div class="feed"><div class="list" id="list"></div></div>
+    <div class="center">
+      <div class="board-wrap"><div class="board" id="board"></div></div>
+      <div id="searchwrap">
+        <div class="search">
+          <svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round"><circle cx="11" cy="11" r="7"/><line x1="16.5" y1="16.5" x2="21" y2="21"/></svg>
+          <input id="sinput" placeholder="Search"/>
+        </div>
+        <div class="results" id="results"></div>
+      </div>
+    </div>
+  </div>
+
+</div>
+<script>
+var DATA={
+ technology:["2-3w (charging)","AI assisted battery material screening","Absorption heat pump","Active latent heat storage","Additive manufacturing for building materials","Adsorbents storage","Adsorption heat pump","Advanced CO2 storage monitoring technologies","Advanced acid gas removal","Aerogel insulation from silica or carbon","Air lubrication","Air-to-water heat pump","Airborne wind energy system","Alcohol-to-jet (biokerosene)","Alkali-activated binders (geopolymers)","Alkaline electrolyser","All solid-state battery","Almost solid-state battery","Alternative fuel cycles for fusion","Aluminum-water reaction","Ammonia (bunkering)","Ammonia cracking - reformer","Ammonia storage","Ammonia tanker","Ammonia turbine","Ammonia-fuelled ship engine","Anion exchange membrane electrolyser","Aquifer thermal energy storage","Automated and connected ship","Autothermal reforming - single reformer","Battery direct recycling","Battery electric ship","Bioleaching","Calcined clay","Chalcogenide thin-film","Chemical reaction storage","Concentrated PV","Concrete recycling","Crystalline silicon PV","Deep sea mining","Direct lithium extraction from brine","Dynamic line rating","EV battery reuse in BESS","Floating solar PV","Flywheel","HALEU fuel cycle","Heat-pipe cooled SMRs","Liquid DAC (l-DAC)","Lithium-ion battery","Molten salt SMR","Sodium-ion battery"],
+ academia:["zero emission","water cycle","coastal erosion","carbon neutrality","terrestrial ecosystem","coastal flood","meltwater","carbon dioxide removal","marine ecosystem","climate system","evapotranspiration","earth system science","antarctic sea ice","regime shift","agricultural productivity","glacier","blue carbon","extreme heat","land use","carbon sink","maladaptation","storm surge","amazon rainforest","reforestation","climate extremes","atmospheric methane","afforestation","carbon stock","extreme weather","ice shelf","snowpack","radiative forcing","growing season","carbon offset","wetland","nitrous oxide","soil water","snowmelt","teleconnection","ocean dynamics","el niño southern oscillation","permafrost carbon","solid electrolyte","perovskite solar cell","redox flow battery"],
+ policy:["Swiss Energy Strategy 2050","Government Vehicle Procurement Directives","Microgeneration Strategy 2006","The Green Investment Fund","Reduced VAT for energy-saving materials","White Paper: A New Deal for Transport","Danish Energy Agreement for 2008-2011","Energy and Electricity Tax cap","Waiver of Import Duty on RE and EE equipment","SmartWay Transport Partnership","Le Grenelle de L'environnement","Green Deal","Light Duty Vehicle Fuel Economy Label","Heavy Vehicle Fuel Efficiency","Electric Vehicles Programme","Building of Tomorrow","New Zealand Energy Strategy (NZES)","Deployment of energy meters","Energy Act 2004","Commercial Building Initiative","National Solar Schools Program","House of Tomorrow Programme","Energy Management System (EnMS)","Act on Global Warming Countermeasures","Energy Act 2008","Polish Energy Policy until 2030","Green Precincts Fund","Maritime Transport Initiative","Energy Management Regulations","Information Campaign on Energy Efficiency","Green Loans Programme for Households","Carbon Reduction Programmes","Renewable Heat Incentive","Feed-in Tariff Scheme","Clean Vehicle Rebate Project","Zero Emission Vehicle Mandate","Industrial Decarbonisation Strategy","National Hydrogen Strategy","Offshore Wind Leasing Round 4","Contracts for Difference Allocation","Emissions Trading Scheme","Carbon Border Adjustment Mechanism","Battery Passport Regulation","Critical Raw Materials Act","Net-Zero Industry Act"],
+ patents:["ChampionX LLC","Solid Power Operating, Inc","Form Energy, Inc.","LanzaTech, Inc.","The Boeing Company","Shine Technologies, LLC","General Electric Company","Ayar Labs Inc","ColdQuanta, Inc.","Ideal Power Inc","Natron Energy, Inc.","Sila Nanotechnologies, Inc.","8 Rivers Capital LLC","X Energy, LLC","Triton Systems, Inc.","Susteon Inc","Electrified Thermal Solutions, Inc.","Boston Electrometallurgical Corp","TerraPower LLC","Finwave Semiconductor, Inc.","Innio Waukesha Gas Engines Inc","Sitration, Inc","Utilidata Inc","Parallel Systems, Inc.","Dimensional Energy, Inc.","EvolOH, Inc.","Quidnet Energy Inc","Fervo Energy Company","SkyNano LLC","Commonwealth Fusion Systems LLC","Ampcera Inc","Mattiq Inc","Verne Inc","Physical Sciences Inc.","EaglePicher Technologies LLC","Xcimer Energy, Inc.","Qromis, Inc.","Peregrine Hydrogen Inc.","Creare LLC","GeneSiC Semiconductor Inc.","Wright Electric Inc","Air Squared, LLC","Wildcat Discovery Technologies, Inc.","Rebellion Photonics, Inc."],
+ investments:["Base Power","Form Energy","Xiamen Hithium Energy Storage","Broad Reach Power","Aypa Power","Hydrostor","Powin","Sila","Lunar Energy","Lyten","Spearmint Energy","Ascend Elements","Antora Energy","Peregrine Energy Solutions","Swell Energy","Infravision","FlexGen Power Systems","Renew Home","Energy Vault","24M Technologies","TS Conductor","VEIR","Gridware","Blue Current","Alsym Energy","Rondo Energy","Voltus","GridBeyond","Peak Energy","OhmConnect","Malta","Leap","LineVision","David Energy","GridX","EV Energy","Heimdall Power","Fourth Power","Theion","Adden Energy","Splight","Ampacimon","Piclo","Highview Power"]
+};
+var LABELS={technology:"TECH",academia:"PAPER",policy:"POLICY",patents:"COMPANY",investments:"COMPANY"};
+
+(function(){
+  // clock
+  function ck(){var d=new Date();document.getElementById('clock').textContent='CEST '+String(d.getHours()).padStart(2,'0')+':'+String(d.getMinutes()).padStart(2,'0');}
+  ck();setInterval(ck,10000);
+
+  var N=26,FLAP="ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789-().",ITEM=30;
+  var board=document.getElementById('board'),cells=[];
+  for(var i=0;i<N;i++){var c=document.createElement('div');c.className='cell';var s=document.createElement('span');c.appendChild(s);board.appendChild(c);cells.push({el:c,sp:s});}
+  function pad(t){t=(t||'').toUpperCase().slice(0,N);var p=N-t.length,l=Math.floor(p/2);return ' '.repeat(l)+t+' '.repeat(p-l);}
+  function flap(t){var p=pad(t);for(var i=0;i<N;i++){(function(i){var target=p[i]===' '?'':p[i];if(cells[i].sp.textContent===target)return;var steps=5+Math.floor(Math.random()*17),step=0;(function f(){var last=step>=steps;var ch=last?target:FLAP[Math.floor(Math.random()*FLAP.length)];cells[i].el.style.transform='rotateX(88deg)';setTimeout(function(){cells[i].sp.textContent=ch;cells[i].el.style.transform='rotateX(0deg)';},55);if(!last){step++;setTimeout(f,92);}})();})(i);}}
+
+  var page=document.getElementById('page'),list=document.getElementById('list'),input=document.getElementById('sinput'),results=document.getElementById('results');
+  var layer=null,arr=[],display='',listItems=[],timer=null;
+
+  function renderList(){list.innerHTML=listItems.map(function(t){return '<div class="li">'+t+'</div>';}).join('');}
+  function dropInList(){
+    renderList();
+    list.style.transition='none';list.style.opacity='0';list.style.transform='translateY(-42px)';
+    void list.offsetHeight;
+    list.style.transition='transform .6s cubic-bezier(.4,0,.2,1),opacity .55s ease';
+    requestAnimationFrame(function(){list.style.opacity='1';list.style.transform='translateY(0)';});
+  }
+  function cycle(){
+    var dropping=listItems[listItems.length-1];
+    list.style.transition='transform .55s cubic-bezier(.4,0,.2,1)';
+    list.style.transform='translateY('+ITEM+'px)';
+    if(list.lastChild)list.lastChild.classList.add('dropping');
+    flap(dropping);
+    setTimeout(function(){listItems.pop();listItems.unshift(display);display=dropping;list.style.transition='none';list.style.transform='translateY(0)';renderList();},560);
+  }
+
+  function selectLayer(l){
+    layer=l;page.dataset.state='1';
+    [].forEach.call(document.querySelectorAll('.layers button'),function(b){b.classList.toggle('active',b.dataset.layer===l);});
+    arr=DATA[l].slice();
+    display=arr[0];listItems=arr.slice(1);
+    dropInList();flap(display);
+    input.value='';input.placeholder='Search '+l;
+    results.innerHTML='';
+    if(timer)clearInterval(timer);timer=setInterval(cycle,7500);
+  }
+
+  function renderResults(q){
+    q=q.trim().toLowerCase();
+    var pool=arr.slice();
+    var hits=(q?pool.filter(function(x){return x.toLowerCase().indexOf(q)>-1;}):pool).slice(0,8);
+    results.innerHTML=hits.map(function(x){return '<div class="res" data-item="'+x.replace(/"/g,'&quot;')+'"><span class="nm">'+x+'</span><span class="ty">'+LABELS[layer]+'</span></div>';}).join('');
+    [].forEach.call(results.querySelectorAll('.res'),function(r){r.addEventListener('click',function(){go(r.dataset.item);});});
+  }
+  function go(item){ window.location.href='climate-eggs-anchor-policy.html'; }
+
+  [].forEach.call(document.querySelectorAll('.layers button'),function(b){b.addEventListener('click',function(){selectLayer(b.dataset.layer);});});
+  input.addEventListener('input',function(){renderResults(input.value);});
+  input.addEventListener('focus',function(){renderResults(input.value);});
+  input.addEventListener('keydown',function(e){if(e.key==='Enter'){var f=results.querySelector('.res');if(f)go(f.dataset.item);}});
+})();
+</script>
+</body>
+</html>
