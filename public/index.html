@@ -11,7 +11,8 @@ html,body{height:100%}
 body{background:#e8e4da;color:#16140f;font-family:'Inter',system-ui,sans-serif;-webkit-font-smoothing:antialiased}
 .page{position:relative;width:100%;height:100vh;overflow:hidden}
 
-.hdr{position:absolute;top:0;left:0;right:0;display:flex;justify-content:space-between;align-items:flex-start;padding:26px 34px;z-index:20}
+.hdr{position:fixed;top:0;left:0;right:0;display:flex;justify-content:space-between;align-items:flex-start;padding:26px 34px;z-index:20}
+.page[data-state="2"] .hdr{background:#e8e4da}
 .wm{font-size:30px;font-weight:600;letter-spacing:-.02em;line-height:.9}
 .hdr-r{display:flex;gap:54px;align-items:flex-start;font-size:13px}
 .nav a{color:#16140f;text-decoration:none;margin-right:14px}
@@ -21,7 +22,7 @@ body{background:#e8e4da;color:#16140f;font-family:'Inter',system-ui,sans-serif;-
 .contact a{color:#16140f;text-decoration:underline;text-underline-offset:3px}
 
 /* left layer selector */
-.layers{position:absolute;left:38px;top:50%;transform:translateY(-50%);display:flex;flex-direction:column;gap:7px;z-index:16}
+.layers{position:fixed;left:38px;top:50%;transform:translateY(-50%);display:flex;flex-direction:column;gap:7px;z-index:16}
 .layers button{background:none;border:0;font-family:'Inter';font-size:18px;color:#a7a298;cursor:pointer;text-align:left;padding:2px 0;letter-spacing:-.01em;transition:color .2s,font-size .25s,padding-left .25s}
 .layers button:hover{color:#16140f;padding-left:6px}
 .layers button.active{color:#000;font-weight:600;font-size:24px;padding-left:16px}
@@ -54,6 +55,43 @@ body{background:#e8e4da;color:#16140f;font-family:'Inter',system-ui,sans-serif;-
 .res:hover{color:#16140f;padding-left:5px}
 .res .nm{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .res .ty{font-family:'JetBrains Mono',monospace;font-size:9px;letter-spacing:.12em;text-transform:uppercase;color:#bcb7aa;flex:0 0 auto}
+
+/* state 2 — anchor view */
+.anchor{display:none;opacity:0;transform:translateY(14px);transition:opacity .5s ease,transform .5s cubic-bezier(.4,0,.2,1)}
+.stage{transition:opacity .45s ease}
+.page[data-state="2"]{overflow-y:auto}
+.subject{display:flex;flex-direction:column;align-items:center;padding-top:118px}
+.tag{font-family:'JetBrains Mono',monospace;font-size:10px;letter-spacing:.34em;text-transform:uppercase;color:#9a968b;margin-bottom:18px}
+.rel{font-family:'JetBrains Mono',monospace;font-size:11px;letter-spacing:.18em;text-transform:uppercase;color:#9a968b;margin-top:22px}
+.connections{max-width:none;margin:34px 0 90px;padding:0 90px 0 264px}
+.tech-head{display:flex;align-items:center;justify-content:space-between;border-top:1px solid #16140f;padding:14px 2px;cursor:pointer;transition:padding-left .2s}
+.tech-head:hover{padding-left:6px}
+.tech-head .lt{display:flex;align-items:baseline;gap:14px}
+.tech-head .name{font-size:21px;font-weight:500}
+.tech-head .bc{font-family:'JetBrains Mono',monospace;font-size:11px;color:#9a968b}
+.tech .pl{color:#bcb7aa;font-size:18px;line-height:1;flex:0 0 auto;transition:transform .3s}
+.tech.open .pl{transform:rotate(45deg)}
+.tech-body{max-height:0;overflow:hidden;opacity:0;transition:max-height .55s cubic-bezier(.4,0,.2,1),opacity .4s ease}
+.tech.open .tech-body{max-height:640px;opacity:1}
+.colgrid{display:grid;grid-template-columns:repeat(4,1fr);gap:28px;padding-top:18px;margin-bottom:26px}
+.col-lab{font-family:'JetBrains Mono',monospace;font-size:10px;letter-spacing:.14em;text-transform:uppercase;color:#16140f;margin-bottom:2px}
+.col-rel{font-family:'JetBrains Mono',monospace;font-size:9.5px;letter-spacing:.08em;text-transform:uppercase;color:#a7a298;margin-bottom:12px}
+.item{border-top:1px solid #d9d5c9;padding:9px 0;font-size:13.5px;line-height:1.35;color:#3a3730;display:flex;justify-content:space-between;gap:12px;cursor:pointer;transition:color .2s}
+.item:hover{color:#16140f}
+.item .c{font-family:'JetBrains Mono',monospace;font-size:9px;letter-spacing:.08em;flex:0 0 auto;padding-top:2px}
+.item.inv{flex-direction:column;gap:2px}
+.item.inv .sub{font-family:'JetBrains Mono',monospace;font-size:10.5px;color:#8c887d;letter-spacing:.02em}
+.item.empty{color:#cbc6ba;cursor:default}
+.st-defunct{color:#a8442f}
+.c.high{color:#16140f}.c.med{color:#8c887d}.c.low{color:#bcb7aa}
+.more-lab{font-family:'JetBrains Mono',monospace;font-size:10px;letter-spacing:.2em;text-transform:uppercase;color:#9a968b;margin:42px 0 4px}
+.tech-row{display:flex;align-items:baseline;justify-content:space-between;border-top:1px solid #d6d2c6;padding:15px 2px;cursor:pointer;transition:padding-left .25s}
+.tech-row:hover{padding-left:8px}
+.tech-row .lt{display:flex;align-items:baseline;gap:12px}
+.tech-row .name{font-size:16px;font-weight:400;color:#16140f}
+.tech-row .sec{font-family:'JetBrains Mono',monospace;font-size:10px;text-transform:uppercase;letter-spacing:.1em;color:#a7a298}
+.tech-row .meta{font-family:'JetBrains Mono',monospace;font-size:10px;letter-spacing:.12em;text-transform:uppercase;color:#8c887d}
+.tech-row .pl{color:#bcb7aa;margin-left:16px;font-size:15px}
 </style>
 </head>
 <body>
@@ -90,6 +128,15 @@ body{background:#e8e4da;color:#16140f;font-family:'Inter',system-ui,sans-serif;-
     </div>
   </div>
 
+  <div class="anchor">
+    <div class="subject">
+      <div class="tag" id="subjTag">POLICY · ANCHOR</div>
+      <div class="board-wrap"><div class="board" id="board2"></div></div>
+      <div class="rel" id="subjRel">demands ↓</div>
+    </div>
+    <div class="connections" id="conn"></div>
+  </div>
+
 </div>
 <script>
 var DATA={
@@ -100,6 +147,24 @@ var DATA={
  investments:["Base Power","Form Energy","Xiamen Hithium Energy Storage","Broad Reach Power","Aypa Power","Hydrostor","Powin","Sila","Lunar Energy","Lyten","Spearmint Energy","Ascend Elements","Antora Energy","Peregrine Energy Solutions","Swell Energy","Infravision","FlexGen Power Systems","Renew Home","Energy Vault","24M Technologies","TS Conductor","VEIR","Gridware","Blue Current","Alsym Energy","Rondo Energy","Voltus","GridBeyond","Peak Energy","OhmConnect","Malta","Leap","LineVision","David Energy","GridX","EV Energy","Heimdall Power","Fourth Power","Theion","Adden Energy","Splight","Ampacimon","Piclo","Highview Power"]
 };
 var LABELS={technology:"TECH",academia:"PAPER",policy:"POLICY",patents:"COMPANY",investments:"COMPANY"};
+var LAYER_REL={policy:"demands",academia:"researches",grants:"funds research on",patents:"patents inventions in",investment:"capital into"};
+var SAT=["policy","academia","grants","patents","investment"];
+var EXCL={academia:"academia",policy:"policy",patents:"patents",investments:"investment"};
+var TECHS=[
+ {name:"Lithium-ion battery",sector:"Transport",path:"Transport › EV battery › Lithium-based",conf:"high",open:true,layers:{
+   academia:[{t:"Li-ion current-density imaging (2022)",c:"high"},{t:"Li-ion thermal-runaway modelling (2024)",c:"high"},{t:"Nonflammable Li-ion electrolyte (2025)",c:"high"},{t:"Nano-structured Si anodes (review)",c:"med"},{t:"Anion-rich solvation electrolyte",c:"med"}],
+   patents:[{t:"Applied Materials — electrode paste",c:"high"},{t:"Applied Materials — ceramic separator",c:"high"},{t:"Sila Nanotechnologies",c:"high"},{t:"Yushin Gleb",c:"high"},{t:"Sion Power Corp",c:"low"},{t:"Ampaire Inc",c:"low"}],
+   grants:[{t:"Oulun Yliopisto",c:"high"}],
+   investment:[{co:"Sila Nanotechnologies",sub:"Series G · $375M · 2024",c:"high"},{co:"Sion Power",sub:"Series A · $75M · 2024",c:"high"},{co:"Ion Storage Systems",sub:"Series A · $30M · 2025",c:"med"},{co:"Coreshell",sub:"Series A · $24M · 2025",c:"med"},{co:"Forge Nano",sub:"Series C · ~$55M · 2024",c:"med"},{co:"Cuberg",sub:"Acquired 2021 · defunct",c:"low",defunct:true}]
+ }},
+ {name:"Fast and ultra-fast charging",path:"Transport › Road transport › EV charging",conf:"high"},
+ {name:"Battery electric passenger car",path:"Transport › Road transport › Electric vehicle",conf:"high"},
+ {name:"Hydrometallurgical battery recycling",path:"Critical minerals › Battery recycling › Processing",conf:"med"},
+ {name:"Direct lithium extraction from brine",path:"Critical minerals › Mineral refining › Hydrometallurgy",conf:"med"},
+ {name:"Lithium-ion storage battery",path:"Energy networks & storage › Electrochemical storage",conf:"low"},
+ {name:"Sodium-ion battery",path:"Transport › EV battery › Next-gen metal batteries",conf:"low"},
+ {name:"All solid-state battery",path:"Transport › EV battery › Other batteries",conf:"low"}
+];
 
 (function(){
   // clock
@@ -109,11 +174,22 @@ var LABELS={technology:"TECH",academia:"PAPER",policy:"POLICY",patents:"COMPANY"
   var N=26,FLAP="ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789-().",ITEM=30;
   var board=document.getElementById('board'),cells=[];
   for(var i=0;i<N;i++){var c=document.createElement('div');c.className='cell';var s=document.createElement('span');c.appendChild(s);board.appendChild(c);cells.push({el:c,sp:s});}
+  var board2=document.getElementById('board2'),cells2=[];
+  for(var j=0;j<N;j++){var c2=document.createElement('div');c2.className='cell';var s2=document.createElement('span');c2.appendChild(s2);board2.appendChild(c2);cells2.push({el:c2,sp:s2});}
   function pad(t){t=(t||'').toUpperCase().slice(0,N);var p=N-t.length,l=Math.floor(p/2);return ' '.repeat(l)+t+' '.repeat(p-l);}
-  function flap(t){var p=pad(t);for(var i=0;i<N;i++){(function(i){var target=p[i]===' '?'':p[i];if(cells[i].sp.textContent===target)return;var steps=5+Math.floor(Math.random()*17),step=0;(function f(){var last=step>=steps;var ch=last?target:FLAP[Math.floor(Math.random()*FLAP.length)];cells[i].el.style.transform='rotateX(88deg)';setTimeout(function(){cells[i].sp.textContent=ch;cells[i].el.style.transform='rotateX(0deg)';},55);if(!last){step++;setTimeout(f,92);}})();})(i);}}
+  function flap(t,cs){cs=cs||cells;var p=pad(t);for(var i=0;i<N;i++){(function(i){var target=p[i]===' '?'':p[i];if(cs[i].sp.textContent===target)return;var steps=5+Math.floor(Math.random()*17),step=0;(function f(){var last=step>=steps;var ch=last?target:FLAP[Math.floor(Math.random()*FLAP.length)];cs[i].el.style.transform='rotateX(88deg)';setTimeout(function(){cs[i].sp.textContent=ch;cs[i].el.style.transform='rotateX(0deg)';},55);if(!last){step++;setTimeout(f,92);}})();})(i);}}
 
   var page=document.getElementById('page'),list=document.getElementById('list'),input=document.getElementById('sinput'),results=document.getElementById('results');
+  var stage=document.querySelector('.stage'),anchor=document.querySelector('.anchor');
   var layer=null,arr=[],display='',listItems=[],timer=null;
+  var NODES={},EBN={},IBN={},IDX={};
+  fetch('graph.json').then(function(r){return r.json();}).then(function(G){
+    NODES=G.nodes;EBN=G.edgesByNode;IBN=G.investmentsByNode;
+    ['technology','academia','policy','patents','investments'].forEach(function(l){
+      DATA[l]=G.anchors[l].map(function(a){return a.label;});
+      IDX[l]={};G.anchors[l].forEach(function(a){IDX[l][a.label]=a.nodes;});
+    });
+  }).catch(function(){});
 
   function renderList(){list.innerHTML=listItems.map(function(t){return '<div class="li">'+t+'</div>';}).join('');}
   function dropInList(){
@@ -150,9 +226,62 @@ var LABELS={technology:"TECH",academia:"PAPER",policy:"POLICY",patents:"COMPANY"
     results.innerHTML=hits.map(function(x){return '<div class="res" data-item="'+x.replace(/"/g,'&quot;')+'"><span class="nm">'+x+'</span><span class="ty">'+LABELS[layer]+'</span></div>';}).join('');
     [].forEach.call(results.querySelectorAll('.res'),function(r){r.addEventListener('click',function(){go(r.dataset.item);});});
   }
-  function go(item){ window.location.href='climate-eggs-anchor-policy.html'; }
+  var CONFW={high:0,medium:1,med:1,low:2};
+  function escA(s){return (s||'').replace(/"/g,'&quot;');}
+  function colItems(node,lyr){
+    if(lyr==='investment')return (IBN[node]||[]).slice();
+    var e=(EBN[node]&&EBN[node][lyr])||[];
+    return e.slice().sort(function(a,b){return (CONFW[a.conf]||1)-(CONFW[b.conf]||1);});
+  }
+  function itemRow(it){return '<div class="item" title="'+escA(it.why)+'"><span>'+it.label+'</span></div>';}
+  function invRow(it){return '<div class="item inv"><span'+(it.defunct?' class="st-defunct"':'')+'>'+it.label+'</span><span class="sub'+(it.defunct?' st-defunct':'')+'">'+(it.sub||'')+'</span></div>';}
+  function col(lyr,node){
+    var items=colItems(node,lyr);
+    var rows=items.length?(lyr==='investment'?items.map(invRow):items.map(itemRow)).join(''):'<div class="item empty"><span>—</span></div>';
+    return '<div><div class="col-lab">'+lyr+'</div><div class="col-rel">'+LAYER_REL[lyr]+'</div>'+rows+'</div>';
+  }
+  function techBlock(node,cols){
+    var m=NODES[node]||{name:node,path:''};
+    var grid=cols.map(function(c){return col(c,node);}).join('');
+    return '<div class="tech">'
+      +'<div class="tech-head"><div class="lt"><span class="name">'+m.name+'</span><span class="bc">'+(m.path||'')+'</span></div><span class="pl">+</span></div>'
+      +'<div class="tech-body"><div class="colgrid" style="grid-template-columns:repeat('+cols.length+',1fr)">'+grid+'</div></div>'
+      +'</div>';
+  }
+  function renderConnections(nodes,subjLayer){
+    var cols=subjLayer==='technology'?SAT.slice():SAT.filter(function(x){return x!==EXCL[subjLayer];});
+    var html=nodes.length?nodes.map(function(n){return techBlock(n,cols);}).join(''):'<div class="more-lab">no linked technologies in the graph yet</div>';
+    document.getElementById('conn').innerHTML=html;
+    [].forEach.call(document.querySelectorAll('#conn .tech-head'),function(h){h.addEventListener('click',function(){h.parentNode.classList.toggle('open');});});
+  }
+  function go(item){
+    if(timer)clearInterval(timer);
+    var nodes=(IDX[layer]&&IDX[layer][item])||[];
+    document.getElementById('subjTag').textContent=layer.toUpperCase()+' · ANCHOR';
+    var n=nodes.length,unit=' technolog'+(n===1?'y':'ies');
+    document.getElementById('subjRel').textContent=layer==='technology'?'connected across the layers ↓':((layer==='policy'?'demands ↓  ':'appears across ↓  ')+n+unit);
+    cells2.forEach(function(c){c.sp.textContent='';});
+    renderConnections(nodes,layer);
+    anchor.style.display='block';void anchor.offsetHeight;
+    page.dataset.state='2';page.scrollTop=0;
+    requestAnimationFrame(function(){
+      stage.style.opacity='0';stage.style.pointerEvents='none';
+      anchor.style.opacity='1';anchor.style.transform='translateY(0)';
+    });
+    setTimeout(function(){flap(item,cells2);},170);
+    setTimeout(function(){stage.style.display='none';},500);
+  }
+  function exitAnchor(){
+    stage.style.display='';stage.style.opacity='0';stage.style.pointerEvents='';
+    void stage.offsetHeight;
+    requestAnimationFrame(function(){stage.style.opacity='1';anchor.style.opacity='0';anchor.style.transform='translateY(14px)';});
+    setTimeout(function(){anchor.style.display='none';},500);
+  }
 
-  [].forEach.call(document.querySelectorAll('.layers button'),function(b){b.addEventListener('click',function(){selectLayer(b.dataset.layer);});});
+  [].forEach.call(document.querySelectorAll('.layers button'),function(b){b.addEventListener('click',function(){
+    if(page.dataset.state==='2')exitAnchor();
+    selectLayer(b.dataset.layer);
+  });});
   input.addEventListener('input',function(){renderResults(input.value);});
   input.addEventListener('focus',function(){renderResults(input.value);});
   input.addEventListener('keydown',function(e){if(e.key==='Enter'){var f=results.querySelector('.res');if(f)go(f.dataset.item);}});
